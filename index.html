@@ -68,6 +68,9 @@
   .done{display:none}
   .done .big{font-size:28px;letter-spacing:-.025em;margin:6px 0 8px;line-height:1.15}
   .tick{width:56px;height:56px;border-radius:50%;background:var(--g);display:grid;place-items:center;margin:6px 0 10px}
+  .paybox{margin:22px 0 0;padding:16px;border-radius:14px;background:#eef7f1;border:1px solid #cfe8d8}
+  .paybox dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0;font-size:15px}
+  .paybox dt{color:var(--ink3)}.paybox dd{margin:0;font-weight:600;word-break:break-word}
   ol.next{padding-left:20px;margin:10px 0 0;font-size:15px;color:var(--ink2)} ol.next li{margin:6px 0}
   .hide{display:none!important}
   @media(max-width:420px){.g2{grid-template-columns:1fr}h1{font-size:27px}}
@@ -199,7 +202,7 @@
       <p class="sub">This ticks the box on the form.</p>
       <label class="opt"><input type="checkbox" id="consentbox"><span style="color:#c00000;font-weight:600">I give consent to Emmunah Real Estate, to use the information provided on this form, together with the documents submitted by me, to do a background on me to process my application.</span></label>
       <div class="err" id="ccerr">Please tick the consent box.</div>
-      <p class="sub" style="margin:8px 0 0">Credit check fee (non-refundable): <span id="ccfee"></span>. Pay only once your agent confirms.</p>
+      <p class="sub" style="margin:8px 0 0">Credit check fee (non-refundable): <span id="ccfee"></span>. Pay it before you send your application and attach the proof of payment (POP). The banking details are on the next step.</p>
     </section>
 
     <section class="card">
@@ -231,9 +234,22 @@
       <div style="height:10px"></div>
       <button class="btn sec" type="button" id="copy">Copy my details instead</button>
       <p class="fine">WhatsApp not opening? Copy your details and send them to <b id="agentnum"></b>.</p>
+      <div class="paybox">
+        <h2 style="font-size:17px;margin:0 0 4px">Pay the credit check fee</h2>
+        <p class="sub" style="margin:0 0 10px">We can only run your credit check once your proof of payment (POP) is in.</p>
+        <dl>
+          <dt>Amount</dt><dd id="payamt"></dd>
+          <dt>Account name</dt><dd>Emmunah Real Estates (Pty) Ltd</dd>
+          <dt>Bank</dt><dd>FNB</dd>
+          <dt>Account no.</dt><dd>63111610225</dd>
+          <dt>Branch code</dt><dd>250655</dd>
+          <dt>Reference</dt><dd id="payref"></dd>
+        </dl>
+        <p class="fine" style="margin:8px 0 0">The fee is non-refundable.</p>
+      </div>
       <h2 style="font-size:17px;margin:22px 0 0">In the same chat, attach:</h2>
-      <ol class="next"><li id="attachline"><b>Your signed application</b> (the PDF you just saved: tap 📎, then Document)</li><li>A copy of your ID (both sides of a smart card)</li><li>Your latest 3 months' payslips</li><li>Your latest 3 months' bank statements</li></ol>
-      <p style="font-size:15px;color:var(--ink2);margin:14px 0 0">Once these are in, your agent will contact you to book a viewing.</p>
+      <ol class="next"><li id="attachline"><b>Your signed application</b> (the PDF you just saved: tap 📎, then Document)</li><li><b>Proof of payment (POP)</b> for the credit check fee</li><li>A copy of your ID (both sides of a smart card)</li><li>Your latest 3 months' payslips</li><li>Your latest 3 months' bank statements</li></ol>
+      <p style="font-size:15px;color:var(--ink2);margin:14px 0 0">Once these and your POP are in, we run your credit check and your agent will contact you to book a viewing.</p>
       <div style="height:16px"></div>
       <button class="btn sec" type="button" id="edit">Start again</button>
     </section>
@@ -329,6 +345,7 @@ function message(){
   L.push('Pets: '+(segVal('pets')==='Yes'?('Yes'+(v('petdet')?' - '+v('petdet'):'')):'No'));
   if(v('notes'))L.push('Notes: '+v('notes').replace(/\n+/g,' '));
   L.push('Credit check: '+(MODE==='hand'?'Will tick the consent box on the printed form':'Consent box ticked')+' ('+feeText()+')');
+  L.push('Credit check POP: Attached (ref '+payRef()+')');
   L.push(MODE==='hand'?'Signed: By hand - sending a photo/scan of the printed form':'Signed: Yes, '+SIGNED_AT+' (signed application attached as PDF)');
   L.push('Consent: I agree to Emmunah Real Estate processing this information and running a credit check (POPIA).');
   return L.join('\n');
@@ -398,6 +415,7 @@ const PAGE150='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAlgCWAAD/2wBDAAYEBQYFBA
 const money2=n=>'R'+(Number(n)||0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,' ');
 const todayStr=()=>{const d=new Date();return d.getDate()+' '+MN[d.getMonth()]+' '+d.getFullYear()};
 const isCo=()=>segVal('astype')==='Company';
+const payRef=()=>(($('last').value.trim()+' '+$('first').value.trim().charAt(0)).trim().toUpperCase()+' CC').slice(0,20);
 const feeText=()=>isCo()?'Business credit check R750.00':'Individual credit check R120.00';
 function show(id){['formview','signview','sendview'].forEach(v=>$(v).style.display=v===id?'block':'none');window.scrollTo(0,0)}
 /* what goes on each line of the form */
@@ -532,6 +550,8 @@ $('f').addEventListener('submit',e=>{
 $('back1').addEventListener('click',()=>show('formview'));
 function toSend(mode,result){
   MODE=mode;
+  $('payamt').textContent=isCo()?'R750.00 (business credit check)':'R120.00 (individual credit check)';
+  $('payref').textContent=payRef();
   $('wa').href='https://wa.me/'+AGENT.wa+'?text='+encodeURIComponent(message());
   $('agentnum').textContent=AGENT.name+' on '+AGENT.show;
   if(mode==='hand'){
