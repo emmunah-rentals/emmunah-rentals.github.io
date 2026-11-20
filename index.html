@@ -100,6 +100,7 @@
   .imghint{font-size:15px;color:var(--ink2);margin:8px 0 12px;background:var(--gt);border-radius:12px;padding:10px 12px}
   #imgout{display:block;width:100%;height:auto;border-radius:6px;box-shadow:0 1px 6px rgba(0,0,0,.15);-webkit-touch-callout:default;user-select:auto}
   .linkbtn{border:none;background:none;padding:0;font:inherit;color:var(--g);font-weight:600;text-decoration:underline;cursor:pointer}
+.linkbtn{background:none;border:0;padding:0;color:inherit;text-decoration:underline;font:inherit;cursor:pointer}
 </style>
 </head>
 <body>
@@ -185,7 +186,7 @@
       </section>
 
       <button class="btn pri" type="submit">Continue to sign</button>
-      <p class="fine">Nothing is stored online. Your application only leaves your phone when you send it on WhatsApp.</p>
+      <p class="fine">Nothing is stored online. Your details stay on this phone only until you send your application, then they are cleared. <button type="button" class="linkbtn" id="clearform">Clear my details now</button></p>
     </form>
   </div>
 
@@ -214,7 +215,7 @@
     </section>
 
     <button class="btn pri" type="button" id="signbtn">Sign &amp; save my application</button>
-    <p class="fine" id="signmsg">You'll save your signed application, then attach it in WhatsApp.</p>
+    <p class="fine" id="signmsg">Next, you'll send your signed application to us on WhatsApp.</p>
     <div style="height:14px"></div>
     <button class="btn sec" type="button" id="handbtn">Print &amp; sign by hand instead</button>
     <p class="fine">Saves the form with your details filled in. Print it, tick the box, sign, and send us a photo or scan.</p>
@@ -227,6 +228,9 @@
       <div class="big" id="sendtitle">Signed. Now send it.</div>
       <p class="lead" style="margin:0 0 16px" id="sendlead">Tap below. WhatsApp opens with your details typed out. Press <b>send</b>, then attach your signed application.</p>
       <a class="btn pri" id="wa" href="#" target="_blank" rel="noopener">Send on WhatsApp</a>
+      <div id="sharewrap" style="display:none"><div style="height:10px"></div>
+      <button class="btn pri" type="button" id="sharebtn">2. Send my signed application</button>
+      <p class="fine" id="sharemsg">Choose <b>WhatsApp</b>, then your chat with your agent.</p></div>
       <div style="height:10px"></div>
       <button class="btn sec" type="button" id="resave">Save my application again</button>
       <div style="height:10px"></div>
@@ -240,18 +244,20 @@
         <dl>
           <dt>Amount</dt><dd id="payamt"></dd>
           <dt>Account name</dt><dd>Emmunah Real Estates (Pty) Ltd</dd>
-          <dt>Bank</dt><dd>FNB</dd>
-          <dt>Account no.</dt><dd>63111610225</dd>
-          <dt>Branch code</dt><dd>250655</dd>
+          <dt>Bank</dt><dd>FNB (Gold Business account)</dd>
+          <dt>Account no.</dt><dd>TYPE-ACCOUNT-NUMBER-HERE</dd>
+          <dt>Branch code</dt><dd>210213</dd>
           <dt>Reference</dt><dd id="payref"></dd>
         </dl>
-        <p class="fine" style="margin:8px 0 0">The fee is non-refundable.</p>
+        <p class="fine" style="margin:8px 0 0">All fees are non-refundable.</p>
       </div>
       <h2 style="font-size:17px;margin:22px 0 0">In the same chat, attach:</h2>
       <ol class="next"><li id="attachline"><b>Your signed application</b> (the PDF you just saved: tap 📎, then Document)</li><li><b>Proof of payment (POP)</b> for the credit check fee</li><li>A copy of your ID (both sides of a smart card)</li><li>Your latest 3 months' payslips</li><li>Your latest 3 months' bank statements</li></ol>
       <p style="font-size:15px;color:var(--ink2);margin:14px 0 0">Once these and your POP are in, we run your credit check and your agent will contact you to book a viewing.</p>
       <div style="height:16px"></div>
-      <button class="btn sec" type="button" id="edit">Start again</button>
+      <button class="btn pri" type="button" id="done">Done: clear my details from this phone</button>
+      <div style="height:10px"></div>
+      <button class="btn sec" type="button" id="edit">Go back and change something</button>
     </section>
   </div>
 </div>
@@ -310,6 +316,12 @@ $('gross').addEventListener('input',afford);
 const FIELDS=['first','last','idno','cell','email','addr','co','coreg','emp','employer','job','gross','net','movein','occ','petdet','notes','other'];
 try{const d=JSON.parse(localStorage.getItem('emm_apply_draft')||'{}');FIELDS.forEach(k=>{if(d[k]&&$(k)&&!$(k).value)$(k).value=d[k]});}catch(e){}
 document.addEventListener('input',()=>{try{const d={};FIELDS.forEach(k=>d[k]=$(k).value);localStorage.setItem('emm_apply_draft',JSON.stringify(d))}catch(e){}});
+/* POPIA: the draft is wiped once the application is sent, or on request */
+function clearDraft(){try{localStorage.removeItem('emm_apply_draft')}catch(e){}}
+function wipeAll(){clearDraft();try{$('f').reset()}catch(e){}FIELDS.forEach(k=>{if($(k))$(k).value=''});
+  try{$('consentbox').checked=false}catch(e){}try{$('padclear').click()}catch(e){}
+  PDFBLOB=null;PICTURE=null;SHAREFILE=null;SIGNED_AT='';}
+$('clearform').addEventListener('click',()=>{wipeAll();$('clearform').textContent='Cleared from this phone'});
 
 /* validate + build the WhatsApp message */
 function check(){
@@ -415,7 +427,7 @@ const PAGE150='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAlgCWAAD/2wBDAAYEBQYFBA
 const money2=n=>'R'+(Number(n)||0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,' ');
 const todayStr=()=>{const d=new Date();return d.getDate()+' '+MN[d.getMonth()]+' '+d.getFullYear()};
 const isCo=()=>segVal('astype')==='Company';
-const payRef=()=>(($('last').value.trim()+' '+$('first').value.trim().charAt(0)).trim().toUpperCase()+' CC').slice(0,20);
+const payRef=()=>'TPN Check';
 const feeText=()=>isCo()?'Business credit check R750.00':'Individual credit check R120.00';
 function show(id){['formview','signview','sendview'].forEach(v=>$(v).style.display=v===id?'block':'none');window.scrollTo(0,0)}
 /* what goes on each line of the form */
@@ -527,6 +539,10 @@ async function makePdf(signed){
   return new Blob([bytes],{type:'application/pdf'});
 }
 const pdfName=suffix=>'Emmunah Rental Application - '+($('first').value+' '+$('last').value).trim().replace(/[^\w \-]/g,'')+(suffix||'')+'.pdf';
+/* share straight into WhatsApp (no copy left in Downloads) where the phone supports it */
+let SHAREFILE=null;
+function shareable(blob,name){try{const f=new File([blob],name,{type:'application/pdf'});
+  return (navigator.canShare&&navigator.share&&navigator.canShare({files:[f]}))?f:null}catch(e){return null}}
 async function saveFile(blob,name,msgEl){
   if(DL){
     try{await DL.save({filename:name,data:blob});return 'saved'}
@@ -554,6 +570,12 @@ function toSend(mode,result){
   $('payref').textContent=payRef();
   $('wa').href='https://wa.me/'+AGENT.wa+'?text='+encodeURIComponent(message());
   $('agentnum').textContent=AGENT.name+' on '+AGENT.show;
+  clearDraft();
+  const sh=(mode!=='hand'&&result==='share');
+  $('sharewrap').style.display=sh?'block':'none';
+  $('wa').textContent=sh?'1. Send my details on WhatsApp':'Send on WhatsApp';
+  $('resave').textContent=sh?'Save a copy to my phone instead':'Save my application again';
+  if(sh){$('sharebtn').textContent='2. Send my signed application';$('sharemsg').innerHTML='Choose <b>WhatsApp</b>, then your chat with '+AGENT.name+'.';}
   if(mode==='hand'){
     $('sendtitle').textContent='Print, sign, then send it.';
     $('sendlead').innerHTML='Print the form you saved, <b>tick the consent box and sign</b>. Then tap below, press <b>send</b>, and attach a clear photo or scan of the signed page.';
@@ -561,7 +583,9 @@ function toSend(mode,result){
   }else{
     $('sendtitle').textContent='Signed. Now send it.';
     $('sendlead').innerHTML='Tap below. WhatsApp opens with your details typed out. Press <b>send</b>, then attach your signed application.';
-    $('attachline').innerHTML=result==='saved'?'<b>Your signed application</b> (the PDF you just saved: tap \ud83d\udcce, then Document)'
+    if(sh){$('sendlead').innerHTML='Two quick steps. <b>1.</b> Tap the first button: WhatsApp opens with your details typed out, press <b>send</b>. <b>2.</b> Come back here and tap the second button to send your signed application into the same chat.';
+      $('attachline').innerHTML='<b>Your signed application</b> (step 2 above sends it straight into the chat)';}
+    else $('attachline').innerHTML=result==='saved'?'<b>Your signed application</b> (the PDF you just saved: tap \ud83d\udcce, then Document)'
       :'<b>Your signed application</b> (the picture you just saved: tap \ud83d\udcce, then Gallery)';
   }
   show('sendview');
@@ -576,7 +600,8 @@ $('signbtn').addEventListener('click',async()=>{
   try{ PDFBLOB=await makePdf(true); }
   catch(err){ b.classList.remove('busy'); b.textContent='Sign & save my application';
     $('signmsg').textContent='Something went wrong making the PDF. Check your connection and try again.'; return; }
-  const r=await saveFile(PDFBLOB,pdfName(' (signed)'),$('signmsg'));
+  SHAREFILE=shareable(PDFBLOB,pdfName(' (signed)'));
+  const r=SHAREFILE?'share':await saveFile(PDFBLOB,pdfName(' (signed)'),$('signmsg'));
   if(r==='picture'){PICTURE=await formPicture(true,false);}
   b.classList.remove('busy'); b.textContent='Sign & save my application';
   if(r==='declined')return;
@@ -599,6 +624,15 @@ $('resave').addEventListener('click',async()=>{
   if(PDFBLOB)saveFile(PDFBLOB,pdfName(MODE==='hand'?' (to sign)':' (signed)'),null);
 });
 $('edit').addEventListener('click',()=>{SIGNED_AT='';show('formview')});
+$('sharebtn').addEventListener('click',async()=>{
+  if(!SHAREFILE)return;
+  try{await navigator.share({files:[SHAREFILE],title:'Emmunah rental application'});
+    $('sharebtn').textContent='Sent \u2713 Send again';$('sharemsg').innerHTML='Check it arrived in your chat with '+AGENT.name+'.';}
+  catch(e){if(e&&e.name==='AbortError')return;
+    const r=await saveFile(PDFBLOB,SHAREFILE.name,null);
+    $('sharemsg').innerHTML='Your phone could not share it directly, so we saved it instead. In WhatsApp, tap \ud83d\udcce, then Document.';}
+});
+$('done').addEventListener('click',()=>{wipeAll();show('formview');$('clearform').textContent='Your details have been cleared from this phone'});
 $('picbtn').addEventListener('click',async()=>{
   if(!PICTURE)PICTURE=await formPicture(MODE!=='hand',false);
   showPicture(PICTURE,MODE==='hand'?'Your application, ready to print':'Your signed application',holdHint(''));
